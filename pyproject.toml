@@ -1,0 +1,29 @@
+[project]
+name = "cart-pole-rl"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "shang-li", email = "eeshangli@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "gymnasium>=1.2.0",
+    "numpy>=2.3.2",
+    "pygame>=2.6.1",
+    "torch>=2.8.0",
+]
+
+[project.scripts]
+cart-pole-rl = "cart_pole_rl:main"
+
+[build-system]
+requires = ["uv_build>=0.8.4,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "matplotlib>=3.10.6",
+    "notebook>=7.4.5",
+]
