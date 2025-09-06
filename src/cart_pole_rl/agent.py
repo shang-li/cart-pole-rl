@@ -1,6 +1,7 @@
 # An agent hosts 1) interacting with env 2) act based on policy 3) collect learning from collected data 
 # what'll be deployed is 2); 1) is done by passing env class and expose play API; 3) is done by passing
 # a replay buffer, where data is sampled and used for training: forward and backward and gradient descent
+import os
 import numpy as np
 import gymnasium as gym
 import torch
@@ -12,8 +13,8 @@ from cart_pole_rl.replay_buffer import ReplayBuffer
 class DQN_Agent():
     def __init__(self, env):
         self.env = env
-        self.q_net = DQN(4, 8, 2)
-        self.q_target_net = DQN(4, 8, 2)
+        self.q_net = DQN(4, 16, 2)
+        self.q_target_net = DQN(4, 16, 2)
         self.q_target_net.load_state_dict(self.q_net.state_dict())
         self.replay_buffer = ReplayBuffer(capacity=15000, obs_dim=4)
         self.episode_steps_log = []
@@ -30,11 +31,11 @@ class DQN_Agent():
         self.action_log.append(action)
         return action
 
-    def run(self, is_training=False, batch_size=100, total_steps=300, start_learning=1000, target_update=1000, eps_start=1.0, eps_end=0.05, eps_decay=20000):
+    def run(self, is_training=False, batch_size=100, total_steps=300, start_learning=1000, target_update=1000, eps_start=1.0, eps_end=0.1, eps_decay=40000):
         obs, _ = self.env.reset()
         episode_steps = 0
         if is_training:
-            optimizer = torch.optim.Adam(self.q_net.parameters(), lr=5e-2)
+            optimizer = torch.optim.Adam(self.q_net.parameters(), lr=3e-2)
 
         for i in range(total_steps):
             episode_steps += 1
@@ -77,18 +78,31 @@ class DQN_Agent():
                 obs, _ = self.env.reset()
             else:
                 obs = obs_next
+            if np.mean(self.episode_steps_log[-30:]) >= 250:
+                # Get project root (two levels up from this file: src/cart_pole_rl/ -> src -> project-root)
+                ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                DATA_DIR = os.path.join(ROOT, "data")
+
+                # Make sure data directory exists
+                os.makedirs(DATA_DIR, exist_ok=True)
+
+                # Save model
+                model_path = os.path.join(DATA_DIR, "q_net.pth")
+                torch.save(self.q_net.state_dict(), model_path)
+                print("Successfully trained a model and stored!")
+                break
 
 if __name__ == "__main__":
     #env = gym.make("CartPole-v1", render_mode="human")
     env = gym.make("CartPole-v1")
     dqn_agent = DQN_Agent(env)
     obs, info = env.reset()
-    dqn_agent.run(batch_size=600, total_steps=30000, is_training=True)
-    print(dqn_agent.action_log)
+    dqn_agent.run(batch_size=600, total_steps=40000, is_training=True)
+    #print(dqn_agent.action_log)
     import matplotlib.pyplot as plt
     plt.plot(dqn_agent.episode_steps_log)
     plt.show()
-            
+
 
 
 
