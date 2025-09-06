@@ -41,7 +41,7 @@ class ReplayBuffer:
         return self.obs[idx], self.action[idx], self.reward[idx], self.obs_next[idx], self.terminated[idx]
     
     def recency_weighted_sample(self, batch_size:int):
-        idx = np.random.choice(self.size, batch_size, replace=False, p=self.priority / np.sum(self.priority))
+        idx = np.random.choice(np.arange(self.capacity), batch_size, replace=False, p=self.priority / np.sum(self.priority))
         return self.obs[idx], self.action[idx], self.reward[idx], self.obs_next[idx], self.terminated[idx]
 
 if __name__ == "__main__":
