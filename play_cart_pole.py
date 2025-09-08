@@ -11,19 +11,25 @@ obs, info = env.reset()
 def q_net_policy(obs):
     q_net = DQN(4, 16, 2)
     q_net.load_state_dict(torch.load("./data/q_net.pth"))
-    action = q_net(torch.tensor(obs, dtype=torch.float32)).argmax().item()
+    #action = q_net(torch.tensor(obs, dtype=torch.float32)).argmax().item()
+    with torch.inference_mode():
+        tau = 0.1
+        logits = q_net(torch.tensor(obs, dtype=torch.float32))
+        probs = torch.softmax(logits / tau, dim=0).cpu().numpy()
+        action = np.random.choice([0, 1], p=probs)
     return action
 
 def crossent_policy(obs):
     net = PolicyNet(4, 16)
     net.load_state_dict(torch.load("./data/crossent_policy.pth"))
-    val = torch.sigmoid(net(torch.tensor(obs)))
-    return int(val >=0.5 )
+    tau = 0.5
+    val = torch.sigmoid(net(torch.tensor(obs)) / tau).item()
+    return np.random.choice([0, 1], p=[1-val, val])
 
 time_to_collapse = 0
 ttc_arr = []
-for _ in range(3000):
-    #action = env.action_space.sample()
+for _ in range(1000):
+    #action = q_net_policy(obs)
     action = crossent_policy(obs)
     obs, reward, terminated, truncated, info = env.step(action)
     time_to_collapse += 1
