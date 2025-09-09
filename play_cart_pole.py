@@ -19,18 +19,19 @@ def q_net_policy(obs):
         action = np.random.choice([0, 1], p=probs)
     return action
 
-def crossent_policy(obs):
-    net = PolicyNet(4, 16)
-    net.load_state_dict(torch.load("./data/crossent_policy.pth"))
+def policy(obs, model_path):
+    net = PolicyNet(4, 16, 2)
+    net.load_state_dict(torch.load(model_path))
     tau = 0.5
-    val = torch.sigmoid(net(torch.tensor(obs)) / tau).item()
-    return np.random.choice([0, 1], p=[1-val, val])
+    probs = torch.softmax(net(torch.tensor(obs)) / tau, dim=0).detach().numpy()
+    return np.random.choice([0, 1], p=probs)
 
 time_to_collapse = 0
 ttc_arr = []
-for _ in range(1000):
+for _ in range(600):
     #action = q_net_policy(obs)
-    action = crossent_policy(obs)
+    #action = policy(obs, "./data/crossent_policy.pth")
+    action = policy(obs, "./data/REINFORCE_policy.pth")
     obs, reward, terminated, truncated, info = env.step(action)
     time_to_collapse += 1
     if terminated or truncated:

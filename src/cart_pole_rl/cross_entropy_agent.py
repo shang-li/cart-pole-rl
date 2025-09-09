@@ -13,13 +13,13 @@ class CrossEntAgent():
     INNER_ITERS = 30
     def __init__(self, env, top_pct=0.7):
         self.env = env
-        self.policy_net = PolicyNet(4, 16)
+        self.policy_net = PolicyNet(4, 16, 2)
         self.rng = np.random.default_rng(seed=66)
         self.top_pct = top_pct
 
     def act(self, obs):
-        val = F.sigmoid(self.policy_net(torch.tensor(obs))).item()
-        return int(self.rng.uniform(0, 1) <= val)
+        act_probs = F.softmax(self.policy_net(torch.tensor(obs)), dim=0).detach().numpy()
+        return np.random.choice([0, 1], p=act_probs)
     
     def train(self):
         optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=1e-2)
@@ -35,9 +35,9 @@ class CrossEntAgent():
                 print(f"start training with {i + 1}th dataset")
                 for j in tqdm(range(self.INNER_ITERS), desc="Steps"):
                     optimizer.zero_grad()
-                    out = self.policy_net(torch.tensor(X)).squeeze()
-                    criterion = torch.nn.BCEWithLogitsLoss()
-                    loss = criterion(out, torch.tensor(y.astype(float)))
+                    out = self.policy_net(torch.tensor(X))
+                    criterion = torch.nn.CrossEntropyLoss()
+                    loss = criterion(out, torch.LongTensor(y))
                     loss.backward()
                     optimizer.step()
         ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
